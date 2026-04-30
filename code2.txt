@@ -1,0 +1,134 @@
+#!/bin/bash
+
+# ==============================
+# 0. Start CouchDB (Docker)
+# ==============================
+docker run -d \
+  --name mycouchdb \
+  -p 5984:5984 \
+  -e COUCHDB_USER=admin \
+  -e COUCHDB_PASSWORD=password \
+  couchdb
+
+# ==============================
+# 1. Create Database
+# ==============================
+curl -X PUT http://admin:password@localhost:5984/studentdb
+
+# ==============================
+# 2. Insert Sample Data (Bulk)
+# ==============================
+curl -X POST http://admin:password@localhost:5984/studentdb/_bulk_docs \
+-H "Content-Type: application/json" \
+-d '{
+  "docs": [
+    {"SRN":1,"Sname":"Rahul","Degree":"BCA","Sem":4,"CGPA":7.2},
+    {"SRN":2,"Sname":"Nisha","Degree":"BCA","Sem":2,"CGPA":7.1},
+    {"SRN":3,"Sname":"Vikram","Degree":"BSc","Sem":4,"CGPA":8.3},
+    {"SRN":4,"Sname":"Pooja","Degree":"BCA","Sem":6,"CGPA":6.5},
+    {"SRN":5,"Sname":"Manoj","Degree":"BCom","Sem":3,"CGPA":5.7},
+    {"SRN":6,"Sname":"Arun","Degree":"BCA","Sem":1,"CGPA":6.8},
+    {"SRN":7,"Sname":"Sneha","Degree":"BCA","Sem":5,"CGPA":7.4}
+  ]
+}'
+
+# ==============================
+# a) Display all documents
+# ==============================
+curl http://admin:password@localhost:5984/studentdb/_all_docs?include_docs=true
+
+# ==============================
+# b) Display all BCA students
+# ==============================
+curl -X POST http://admin:password@localhost:5984/studentdb/_find \
+-H "Content-Type: application/json" \
+-d '{
+  "selector": { "Degree": "BCA" }
+}'
+
+# ==============================
+# c) Sort by Sname (ascending)
+# ==============================
+
+# Create index for sorting
+curl -X POST http://admin:password@localhost:5984/studentdb/_index \
+-H "Content-Type: application/json" \
+-d '{
+  "index": { "fields": ["Sname"] },
+  "name": "sname-index",
+  "type": "json"
+}'
+
+# Sort query
+curl -X POST http://admin:password@localhost:5984/studentdb/_find \
+-H "Content-Type: application/json" \
+-d '{
+  "selector": {},
+  "sort": [{"Sname": "asc"}]
+}'
+
+# ==============================
+# d) First 5 students
+# ==============================
+curl -X POST http://admin:password@localhost:5984/studentdb/_find \
+-H "Content-Type: application/json" \
+-d '{
+  "selector": {},
+  "limit": 5
+}'
+
+# ==============================
+# e) Students 5,6,7
+# ==============================
+curl -X POST http://admin:password@localhost:5984/studentdb/_find \
+-H "Content-Type: application/json" \
+-d '{
+  "selector": {
+    "SRN": { "$in": [5,6,7] }
+  }
+}'
+
+# ==============================
+# f) Degree of Rahul
+# ==============================
+curl -X POST http://admin:password@localhost:5984/studentdb/_find \
+-H "Content-Type: application/json" \
+-d '{
+  "selector": { "Sname": "Rahul" },
+  "fields": ["Degree"]
+}'
+
+# ==============================
+# g) Students 5,6,7 sorted by CGPA (desc)
+# ==============================
+
+# Create index for CGPA
+curl -X POST http://admin:password@localhost:5984/studentdb/_index \
+-H "Content-Type: application/json" \
+-d '{
+  "index": { "fields": ["CGPA"] },
+  "name": "cgpa-index",
+  "type": "json"
+}'
+
+# Sort descending
+curl -X POST http://admin:password@localhost:5984/studentdb/_find \
+-H "Content-Type: application/json" \
+-d '{
+  "selector": {
+    "SRN": { "$in": [5,6,7] }
+  },
+  "sort": [{"CGPA": "desc"}]
+}'
+
+# ==============================
+# h) BCA students with 6 < CGPA < 7.5
+# ==============================
+curl -X POST http://admin:password@localhost:5984/studentdb/_find \
+-H "Content-Type: application/json" \
+-d '{
+  "selector": {
+    "Degree": "BCA",
+    "CGPA": { "$gt": 6, "$lt": 7.5 }
+  }
+}'
