@@ -1,0 +1,98 @@
+#!/bin/bash
+
+# ==============================
+# 0. Start CouchDB (Docker)
+# ==============================
+docker run -d \
+  --name mycouchdb \
+  -p 5984:5984 \
+  -e COUCHDB_USER=admin \
+  -e COUCHDB_PASSWORD=password \
+  couchdb
+
+# ==============================
+# 1. Create Database
+# ==============================
+curl -X PUT http://admin:password@localhost:5984/librarydb
+
+# ==============================
+# 2. Insert Sample Data (Bulk)
+# ==============================
+curl -X POST http://admin:password@localhost:5984/librarydb/_bulk_docs \
+-H "Content-Type: application/json" \
+-d '{
+  "docs": [
+    {"ISBN":101,"Title":"The Great Gatsby","Author":"F. Scott Fitzgerald","Genre":"Fiction","PublicationYear":1925,"CopiesAvailable":5,"Rating":4.5},
+    {"ISBN":102,"Title":"To Kill a Mockingbird","Author":"Harper Lee","Genre":"Fiction","PublicationYear":1960,"CopiesAvailable":3,"Rating":4.8},
+    {"ISBN":103,"Title":"1984","Author":"George Orwell","Genre":"Dystopian","PublicationYear":1949,"CopiesAvailable":4,"Rating":4.7},
+    {"ISBN":104,"Title":"Moby Dick","Author":"Herman Melville","Genre":"Fiction","PublicationYear":1851,"CopiesAvailable":2,"Rating":4.0},
+    {"ISBN":105,"Title":"The Alchemist","Author":"Paulo Coelho","Genre":"Fiction","PublicationYear":1988,"CopiesAvailable":6,"Rating":4.6},
+    {"ISBN":106,"Title":"Sapiens","Author":"Yuval Noah Harari","Genre":"Non-Fiction","PublicationYear":2011,"CopiesAvailable":5,"Rating":4.7}
+  ]
+}'
+
+# ==============================
+# a) Display all documents
+# ==============================
+curl http://admin:password@localhost:5984/librarydb/_all_docs?include_docs=true
+
+# ==============================
+# b) Display all Fiction books
+# ==============================
+curl -X POST http://admin:password@localhost:5984/librarydb/_find \
+-H "Content-Type: application/json" \
+-d '{
+  "selector": { "Genre": "Fiction" }
+}'
+
+# ==============================
+# c) Sort by Title (ascending)
+# ==============================
+
+# Create index
+curl -X POST http://admin:password@localhost:5984/librarydb/_index \
+-H "Content-Type: application/json" \
+-d '{
+  "index": { "fields": ["Title"] },
+  "name": "title-index",
+  "type": "json"
+}'
+
+# Sort query
+curl -X POST http://admin:password@localhost:5984/librarydb/_find \
+-H "Content-Type: application/json" \
+-d '{
+  "selector": {},
+  "sort": [{"Title": "asc"}]
+}'
+
+# ==============================
+# d) First 3 books
+# ==============================
+curl -X POST http://admin:password@localhost:5984/librarydb/_find \
+-H "Content-Type: application/json" \
+-d '{
+  "selector": {},
+  "limit": 3
+}'
+
+# ==============================
+# e) Books 4,5,6
+# ==============================
+curl -X POST http://admin:password@localhost:5984/librarydb/_find \
+-H "Content-Type: application/json" \
+-d '{
+  "selector": {
+    "ISBN": { "$in": [104,105,106] }
+  }
+}'
+
+# ==============================
+# f) Author of "The Great Gatsby"
+# ==============================
+curl -X POST http://admin:password@localhost:5984/librarydb/_find \
+-H "Content-Type: application/json" \
+-d '{
+  "selector": { "Title": "The Great Gatsby" },
+  "fields": ["Author"]
+}'
