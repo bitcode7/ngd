@@ -1,0 +1,73 @@
+docker run -d \
+  --name neo4j-movie \
+  -p 7474:7474 -p 7687:7687 \
+  -e NEO4J_AUTH=neo4j/password \
+  neo4j:latest
+
+
+CREATE DATABASE moviedb;
+
+:use moviedb
+
+CREATE
+(u1:User {UserID:1, Username:"John"}),
+(u2:User {UserID:2, Username:"Alice"}),
+(u3:User {UserID:3, Username:"Bob"}),
+(u4:User {UserID:4, Username:"Jane"}),
+(u5:User {UserID:5, Username:"Rohan"}),
+
+(m1:Movie {MovieID:101, Title:"Inception"}),
+(m2:Movie {MovieID:102, Title:"The Matrix"}),
+(m3:Movie {MovieID:103, Title:"Interstellar"}),
+(m4:Movie {MovieID:104, Title:"Avatar"}),
+
+(u1)-[:LIKES]->(m1),
+(u1)-[:LIKES]->(m2),
+
+(u2)-[:LIKES]->(m1),
+
+(u3)-[:LIKES]->(m1),
+(u3)-[:LIKES]->(m4),
+
+(u4)-[:LIKES]->(m2),
+(u4)-[:LIKES]->(m3),
+
+(u5)-[:LIKES]->(m2),
+(u5)-[:LIKES]->(m4),
+
+
+# Movies liked by "John"
+
+MATCH (u:User {Username:"John"})-[:LIKES]->(m:Movie)
+RETURN m;
+
+# Users who like "Inception"
+
+MATCH (u:User)-[:LIKES]->(m:Movie {Title:"Inception"})
+RETURN u;
+
+# All movies in ascending order
+
+MATCH (m:Movie)
+RETURN m
+ORDER BY m.Title ASC;
+
+#Users who like BOTH "The Matrix" and "Inception"
+
+MATCH (u:User)-[:LIKES]->(:Movie {Title:"The Matrix"}),
+      (u)-[:LIKES]->(:Movie {Title:"Inception"})
+RETURN u;
+
+# Most liked movie
+
+MATCH (m:Movie)<-[:LIKES]-(u:User)
+RETURN m, COUNT(u) AS likes
+ORDER BY likes DESC
+LIMIT 1;
+
+# Top 5 users who like the most movies
+
+MATCH (u:User)-[:LIKES]->(m:Movie)
+RETURN u, COUNT(m) AS totalLikes
+ORDER BY totalLikes DESC
+LIMIT 5;
