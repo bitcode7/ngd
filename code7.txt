@@ -1,0 +1,33 @@
+sudo docker run -d --name redis-server -p 6380:6379 redis
+sudo docker exec -it redis-server redis-cli
+
+# Insert
+HSET employee:201 Name "Arjun" Department "HR" Position "Manager" Salary 60000
+HSET employee:202 Name "Priya" Department "HR" Position "Executive" Salary 45000
+HSET employee:203 Name "Rahul" Department "IT" Position "Developer" Salary 70000
+HSET employee:204 Name "Sneha" Department "Finance" Position "Analyst" Salary 55000
+
+
+# Indexes
+SADD department:HR 201 202
+SADD department:IT 203
+SADD department:Finance 204
+
+ZADD salary_index 60000 201
+ZADD salary_index 45000 202
+ZADD salary_index 70000 203
+ZADD salary_index 55000 204
+
+# Get IDs
+SMEMBERS department:HR
+
+#Fetch details
+  
+HGETALL employee:201
+HGETALL employee:202
+
+# Get IDs
+ZRANGEBYSCORE salary_index 50000 +inf
+
+# Update Employee Position
+HSET employee:202 Position "Senior Executive"
