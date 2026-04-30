@@ -1,0 +1,61 @@
+docker run -d \
+  --name neo4j-social \
+  -p 7474:7474 -p 7687:7687 \
+  -e NEO4J_AUTH=neo4j/password \
+  neo4j:latest
+
+
+CREATE DATABASE socialdb;
+
+:use socialdb
+
+CREATE
+(u1:User {UserID:1, Username:"Alice"}),
+(u2:User {UserID:2, Username:"Bob"}),
+(u3:User {UserID:3, Username:"Jane"}),
+(u4:User {UserID:4, Username:"Rohan"}),
+(u5:User {UserID:5, Username:"Tanush"}),
+
+(u3)-[:FOLLOWS]->(u1), // Jane → Alice
+(u3)-[:FOLLOWS]->(u2), // Jane → Bob
+(u4)-[:FOLLOWS]->(u1), // Rohan → Alice
+(u5)-[:FOLLOWS]->(u1), // Tanush → Alice
+(u4)-[:FOLLOWS]->(u2), // Rohan → Bob
+
+
+# Display all users
+
+MATCH (u:User)
+RETURN u;
+
+
+# Users followed by "Jane"
+
+MATCH (j:User {Username:"Jane"})-[:FOLLOWS]->(u)
+RETURN u;
+
+
+# Users in ascending order
+
+MATCH (u:User)
+RETURN u
+ORDER BY u.Username ASC;
+
+# Users who follow BOTH Alice and Bob
+
+MATCH (u:User)-[:FOLLOWS]->(:User {Username:"Alice"}),
+      (u)-[:FOLLOWS]->(:User {Username:"Bob"})
+RETURN u;
+
+# Users with MOST followers
+
+MATCH (u:User)<-[:FOLLOWS]-(f:User)
+RETURN u, COUNT(f) AS followers
+ORDER BY followers DESC
+LIMIT 1;
+
+# First 5 users
+
+MATCH (u:User)
+RETURN u
+LIMIT 5;
