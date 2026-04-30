@@ -1,0 +1,106 @@
+#!/bin/bash
+
+# ==============================
+# 0. Run PostgreSQL container
+# ==============================
+docker run -d \
+--name postgres-db \
+-e POSTGRES_PASSWORD=admin \
+-p 5432:5432 \
+postgres
+
+# Wait for PostgreSQL to start
+sleep 5
+
+# ==============================
+# 1. Execute all SQL commands
+# ==============================
+docker exec -i postgres-db psql -U postgres <<EOF
+
+-- ============================
+-- Create Database
+-- ============================
+CREATE DATABASE hospitaldb;
+
+\c hospitaldb
+
+-- ============================
+-- Create Tables
+-- ============================
+CREATE TABLE Doctors (
+    DoctorID INT PRIMARY KEY,
+    Name VARCHAR(50),
+    Specialization VARCHAR(50),
+    Experience INT
+);
+
+CREATE TABLE Patients (
+    PatientID INT PRIMARY KEY,
+    Name VARCHAR(50),
+    Age INT,
+    Gender VARCHAR(10),
+    AdmissionDate DATE,
+    DoctorID INT
+);
+
+-- ============================
+-- Insert Data
+-- ============================
+INSERT INTO Doctors VALUES
+(1, 'Dr. Smith', 'Cardiology', 10),
+(2, 'Dr. John', 'Neurology', 8),
+(3, 'Dr. Alice', 'Cardiology', 12);
+
+INSERT INTO Patients VALUES
+(1, 'Rahul', 25, 'Male', '2024-06-15', 1),
+(2, 'Nisha', 30, 'Female', '2024-06-15', 2),
+(3, 'Vikram', 45, 'Male', '2024-06-16', 1),
+(4, 'Pooja', 20, 'Female', '2024-06-17', 3),
+(5, 'Arun', 35, 'Male', '2024-06-15', 2);
+
+-- ============================
+-- a) Fetch Patient Details
+-- ============================
+SELECT * FROM Patients;
+
+-- ============================
+-- b) Patients on specific date
+-- ============================
+SELECT * FROM Patients
+WHERE AdmissionDate = '2024-06-15';
+
+-- ============================
+-- c) Patients by Age Group (>30)
+-- ============================
+SELECT * FROM Patients
+WHERE Age > 30;
+
+-- ============================
+-- d) Update Patient Name
+-- ============================
+UPDATE Patients
+SET Name = 'UpdatedName'
+WHERE PatientID = 1;
+
+-- ============================
+-- e) Doctors by Specialization
+-- ============================
+SELECT * FROM Doctors
+WHERE Specialization = 'Cardiology';
+
+-- ============================
+-- f) Count Patients per Doctor
+-- ============================
+SELECT d.DoctorID, d.Name, COUNT(p.PatientID) AS PatientCount
+FROM Doctors d
+LEFT JOIN Patients p 
+ON d.DoctorID = p.DoctorID
+GROUP BY d.DoctorID, d.Name;
+
+-- ============================
+-- g) Average Experience
+-- ============================
+SELECT AVG(Experience) AS AvgExperience
+FROM Doctors;
+
+EOF
