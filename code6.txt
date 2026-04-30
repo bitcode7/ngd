@@ -1,0 +1,44 @@
+# Run Redis using Docker
+docker run -d --name redis-server -p 6379:6379 redis
+
+# Start Redis CLI:
+
+docker exec -it redis-server redis-cli
+
+# Insert products using HSET
+HSET product:101 Name "Laptop" Category "Electronics" Price 900
+HSET product:102 Name "Headphones" Category "Electronics" Price 700
+HSET product:103 Name "Shoes" Category "Fashion" Price 800
+HSET product:104 Name "Watch" Category "Accessories" Price 1200
+
+
+# Category indexing (Sets)
+SADD category:Electronics 101 102
+SADD category:Fashion 103
+SADD category:Accessories 104
+
+
+# Price indexing (Sorted Set)
+ZADD price_index 900 101
+ZADD price_index 700 102
+ZADD price_index 800 103
+ZADD price_index 1200 104
+
+# Retrieve product by ProductID
+HGETALL product:101
+
+# Get IDs
+SMEMBERS category:Electronics
+
+# Fetch details
+HGETALL product:101
+HGETALL product:102
+
+# Get IDs
+ZRANGEBYSCORE price_index 500 1000
+
+# Fetch details
+HGETALL product:102
+HGETALL product:103
+HGETALL product:101
+  
