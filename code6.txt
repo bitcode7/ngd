@@ -41,4 +41,13 @@ ZRANGEBYSCORE price_index 500 1000
 HGETALL product:102
 HGETALL product:103
 HGETALL product:101
-  
+
+# (Update Price)
+HSET product:101 Price 950
+ZADD price_index 950 101
+
+
+# (Delete Product)
+DEL product:101
+SREM category:Electronics 101
+ZREM price_index 101
