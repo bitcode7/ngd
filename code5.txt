@@ -33,7 +33,7 @@ CREATE
 (u4)-[:LIKES]->(m3),
 
 (u5)-[:LIKES]->(m2),
-(u5)-[:LIKES]->(m4),
+(u5)-[:LIKES]->(m4);
 
 
 # Movies liked by "John"
